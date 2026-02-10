@@ -31,13 +31,13 @@ export const Scene: React.FC = () => {
       >
         <Suspense fallback={null}>
             <color attach="background" args={['#020408']} />
-            <fog attach="fog" args={['#020408', 5, 35]} />
+            <fog attach="fog" args={['#020408', 10, 50]} />
             
             <Environment preset="night" background={false} />
             <ambientLight intensity={0.1} />
             <pointLight position={[10, 10, 10]} intensity={3} color="#00f0ff" castShadow />
 
-            <Physics gravity={[0, -12, 0]}>
+            <Physics gravity={[0, -9.81, 0]}>
                 <Level />
                 <Player />
                 {isMultiplayerReady && players.map((player) => (
