@@ -8,14 +8,27 @@ import * as THREE from 'three';
 import { Player, GhostPlayer } from './Player';
 import { Level } from './world/Level';
 import { BookArtifact } from './BookArtifact';
+import { DataFragments, HolographicDisplays, EnergyParticles, FloorGrid, DynamicLighting } from './world/Decorations';
 import { useGameStore } from '../store';
 import { usePlayersList } from 'playroomkit';
 import { BookData } from '../types';
 
 const BOOKS: BookData[] = [
+  // Original Core Books
   { id: '1', title: 'Neon Commerce', description: 'Next.js 14 Headless Shopify', position: [-8, 1.5, -8], color: '#00f0ff' },
   { id: '2', title: 'Neural Dashboard', description: 'Real-time AI Analytics', position: [8, 1.5, -8], color: '#ff0055' },
   { id: '3', title: 'Aether State', description: 'Distributed State Mgmt', position: [0, 1.5, 8], color: '#764abc' },
+
+  // Extended Library Collection
+  { id: '4', title: 'Quantum Render', description: 'WebGL Shader Optimization', position: [-12, 1.5, 0], color: '#ffaa00' },
+  { id: '5', title: 'Void Protocols', description: 'GraphQL Federation', position: [12, 1.5, 0], color: '#764abc' },
+  { id: '6', title: 'Cyber Forge', description: 'Rust WebAssembly Engine', position: [-5, 1.5, -12], color: '#ff3333' },
+  { id: '7', title: 'Plasma Network', description: 'Serverless Edge Functions', position: [5, 1.5, -12], color: '#ccff00' },
+  { id: '8', title: 'Nexus Auth', description: 'Zero-Trust Authentication', position: [-10, 1.5, 5], color: '#00f0ff' },
+  { id: '9', title: 'Data Prism', description: 'Real-time Stream Processing', position: [10, 1.5, 5], color: '#ff0055' },
+  { id: '10', title: 'Holographic UI', description: 'AR/VR Interface Design', position: [0, 1.5, -15], color: '#ffaa00' },
+  { id: '11', title: 'Cryptic Vault', description: 'End-to-End Encryption', position: [-15, 1.5, -5], color: '#764abc' },
+  { id: '12', title: 'Electron Mesh', description: 'Distributed Computing Grid', position: [15, 1.5, -5], color: '#00f0ff' },
 ];
 
 export const Scene: React.FC = () => {
@@ -34,11 +47,12 @@ export const Scene: React.FC = () => {
             <fog attach="fog" args={['#020408', 5, 35]} />
             
             <Environment preset="night" background={false} />
-            <ambientLight intensity={0.1} />
-            <pointLight position={[10, 10, 10]} intensity={3} color="#00f0ff" castShadow />
+            <ambientLight intensity={0.15} />
+            <DynamicLighting />
 
             <Physics gravity={[0, -12, 0]}>
                 <Level />
+                <FloorGrid />
                 <Player />
                 {isMultiplayerReady && players.map((player) => (
                    <GhostPlayer key={player.id} player={player} />
@@ -47,6 +61,11 @@ export const Scene: React.FC = () => {
                     <BookArtifact key={book.id} data={book} />
                 ))}
             </Physics>
+
+            {/* Atmospheric Enhancements */}
+            <DataFragments />
+            <HolographicDisplays />
+            <EnergyParticles />
 
             <Stars radius={100} depth={50} count={3000} factor={4} saturation={0.5} fade speed={0.5} />
 
