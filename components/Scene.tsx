@@ -62,17 +62,23 @@ export const Scene: React.FC = () => {
       {/* --- PLAYER STATISTICS OVERLAY --- */}
       <div className="fixed bottom-12 left-12 pointer-events-none select-none z-50 flex flex-col gap-6 font-mono w-80">
         
-        {/* Profile Card Style (Matching Image 1/5 character frame) */}
+        {/* Profile Card Style (Matching character frame style) */}
         <div className="flex items-start gap-4">
           <div className="relative">
-            {/* Class Icon / Avatar Placeholder */}
-            <div className="w-16 h-16 bg-tech-slate/80 border-2 border-tech-cyan/40 backdrop-blur-xl flex items-center justify-center relative overflow-hidden">
-               <div className="absolute inset-0 bg-tech-cyan/5 animate-pulse" />
-               <div className="w-10 h-10 border border-tech-cyan/20 rotate-45" />
-               <span className="absolute text-[8px] text-tech-cyan/60 top-1 left-1">NODE_ID</span>
+            {/* Class Icon with Player Color Accent */}
+            <div 
+              className="w-16 h-16 bg-tech-slate/80 border-2 backdrop-blur-xl flex items-center justify-center relative overflow-hidden transition-colors duration-500"
+              style={{ borderColor: `${playerColor}66` }}
+            >
+               <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: `${playerColor}0D` }} />
+               <div className="w-10 h-10 border rotate-45" style={{ borderColor: `${playerColor}33` }} />
+               <span className="absolute text-[8px] top-1 left-1" style={{ color: `${playerColor}99` }}>NODE_ID</span>
             </div>
             {/* Level Badge */}
-            <div className="absolute -bottom-2 -right-2 bg-tech-cyan text-black px-2 py-0.5 text-[10px] font-black italic shadow-[0_0_15px_#00f0ff]">
+            <div 
+              className="absolute -bottom-2 -right-2 text-black px-2 py-0.5 text-[10px] font-black italic shadow-lg transition-colors duration-500"
+              style={{ backgroundColor: playerColor }}
+            >
               LVL_{level}
             </div>
           </div>
@@ -80,12 +86,12 @@ export const Scene: React.FC = () => {
           <div className="flex-1 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-white text-lg font-black tracking-widest italic">{playerAvatar.toUpperCase()}</span>
-              <span className="text-[9px] text-tech-cyan/60 tracking-[0.2em]">CONNECTED</span>
+              <span className="text-[9px] tracking-[0.2em]" style={{ color: `${playerColor}99` }}>CONNECTED</span>
             </div>
             <div className="h-0.5 w-full bg-tech-cyan/20 relative">
-               <div className="absolute inset-0 bg-tech-cyan shadow-[0_0_10px_#00f0ff]" style={{ width: '100%' }} />
+               <div className="absolute inset-0 transition-all duration-500" style={{ width: '100%', backgroundColor: playerColor, boxShadow: `0 0 10px ${playerColor}` }} />
             </div>
-            <div className="flex justify-between text-[9px] text-gray-500 uppercase">
+            <div className="flex justify-between text-[9px] text-gray-500 uppercase tracking-tighter">
               <span>Sync_Stability</span>
               <span>98.4%</span>
             </div>
@@ -98,12 +104,18 @@ export const Scene: React.FC = () => {
            <div className="space-y-1">
               <div className="flex justify-between items-center text-[10px] tracking-[0.2em] font-bold">
                  <span className="text-gray-400">NEURAL_SYNC</span>
-                 <span className={energy < 25 ? 'text-red-500 animate-pulse' : 'text-tech-cyan'}>{Math.round(energy)}%</span>
+                 <span className={energy < 25 ? 'text-red-500 animate-pulse' : ''} style={{ color: energy < 25 ? undefined : playerColor }}>
+                    {Math.round(energy)}%
+                 </span>
               </div>
               <div className="h-1.5 w-full bg-white/5 relative overflow-hidden">
                  <div 
-                   className={`h-full transition-all duration-300 ${energy < 25 ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-tech-cyan shadow-[0_0_10px_#00f0ff]'}`}
-                   style={{ width: `${energy}%` }}
+                   className={`h-full transition-all duration-300`}
+                   style={{ 
+                     width: `${energy}%`, 
+                     backgroundColor: energy < 25 ? '#ef4444' : playerColor,
+                     boxShadow: energy < 25 ? '0 0 10px #ef4444' : `0 0 10px ${playerColor}`
+                   }}
                  />
               </div>
            </div>
@@ -124,7 +136,7 @@ export const Scene: React.FC = () => {
         </div>
 
         {/* Decorative System Log */}
-        <div className="text-[8px] text-tech-cyan/30 uppercase tracking-[0.4em] leading-relaxed">
+        <div className="text-[8px] uppercase tracking-[0.4em] leading-relaxed" style={{ color: `${playerColor}4D` }}>
            SCANNING_CELL_X_42...<br/>
            FRAGMENT_SYNC_STABLE<br/>
            AETHERIA_LINK_0.9.1

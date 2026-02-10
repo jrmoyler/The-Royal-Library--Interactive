@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { myPlayer } from 'playroomkit';
 import { useGameStore } from '../store';
 
+// --- Custom Tech Shader ---
 const TechShaderMaterial = shaderMaterial(
   {
     uTime: 0,
@@ -120,8 +121,12 @@ export const Player: React.FC = () => {
     if (isMultiplayerReady) {
       try {
         const p = myPlayer();
-        p.setState('pos', { x: translation.x, y: translation.y, z: translation.z });
-        if (visualGroup.current) p.setState('rot', { y: visualGroup.current.rotation.y });
+        if (p) {
+          p.setState('pos', { x: translation.x, y: translation.y, z: translation.z });
+          if (visualGroup.current) p.setState('rot', { y: visualGroup.current.rotation.y });
+          p.setState('color', playerColor);
+          p.setState('avatar', playerAvatar);
+        }
       } catch (e) {}
     }
   });
@@ -130,7 +135,6 @@ export const Player: React.FC = () => {
     <RigidBody ref={body} colliders={false} enabledRotations={[false, false, false]} position={[0, 5, 0]} name="local-player" friction={0}>
       <CapsuleCollider args={[0.5, 0.5]} position={[0, 1, 0]} />
       <group ref={visualGroup}>
-          {/* Detailed Hooded Body (Common Aesthetic) */}
           <group position={[0, 1.6, 0]}>
               <mesh castShadow>
                   <sphereGeometry args={[0.22, 16, 16]} />
@@ -154,15 +158,15 @@ export const Player: React.FC = () => {
   );
 };
 
-// Added GhostPlayer to represent other players in the multiplayer session
 export const GhostPlayer: React.FC<{ player: any }> = ({ player }) => {
   const visualGroup = useRef<THREE.Group>(null);
   const capeRef = useRef<THREE.Group>(null);
   const weaponRef = useRef<THREE.Group>(null);
   const techMaterialRef = useRef<any>(null);
 
-  // Skip rendering the local player ghost as they are already handled by the main Player component
-  if (player.isLocal()) return null;
+  // Correct check for local player using player.id comparison
+  const localPlayer = myPlayer();
+  if (localPlayer && player.id === localPlayer.id) return null;
 
   const pos = player.getState('pos') || { x: 0, y: 0, z: 0 };
   const rot = player.getState('rot') || { y: 0 };
@@ -185,13 +189,13 @@ export const GhostPlayer: React.FC<{ player: any }> = ({ player }) => {
     <group position={[pos.x, pos.y, pos.z]}>
       <group ref={visualGroup} rotation-y={rot.y}>
           <group position={[0, 1.6, 0]}>
-              <mesh castShadow>
+              <mesh>
                   <sphereGeometry args={[0.22, 16, 16]} />
                   <meshStandardMaterial color={C_SKIN} /> 
               </mesh>
               <mesh position={[0, 0.06, 0]}>
                   <sphereGeometry args={[0.26, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.4]} />
-                  <meshStandardMaterial color="#080c14" metalness={0.9} roughness={0.1} />
+                  <meshStandardMaterial color="#080c14" />
               </mesh>
               <mesh position={[0, 0.02, 0.16]}>
                   <boxGeometry args={[0.28, 0.08, 0.04]} />
