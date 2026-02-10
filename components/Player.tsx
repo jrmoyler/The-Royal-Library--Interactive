@@ -115,8 +115,21 @@ export const Player: React.FC = () => {
       }
     }
 
-    state.camera.position.lerp(new THREE.Vector3(translation.x, translation.y + 5, translation.z + 8), 0.1);
-    state.camera.lookAt(translation.x, translation.y, translation.z);
+    // Orbit-style third-person camera with natural movement
+    const cameraOffset = new THREE.Vector3(0, 6, 10);
+    // Rotate camera offset based on player facing direction for orbit feel
+    if (visualGroup.current && isMoving) {
+      const rotY = visualGroup.current.rotation.y;
+      cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotY * 0.3);
+    }
+    const targetCamPos = new THREE.Vector3(
+      translation.x + cameraOffset.x,
+      translation.y + cameraOffset.y,
+      translation.z + cameraOffset.z
+    );
+    state.camera.position.lerp(targetCamPos, 1 - Math.exp(-4 * delta));
+    const lookTarget = new THREE.Vector3(translation.x, translation.y + 1, translation.z);
+    state.camera.lookAt(lookTarget);
 
     if (isMultiplayerReady) {
       try {
@@ -132,8 +145,18 @@ export const Player: React.FC = () => {
   });
 
   return (
-    <RigidBody ref={body} colliders={false} enabledRotations={[false, false, false]} position={[0, 5, 0]} name="local-player" friction={0}>
-      <CapsuleCollider args={[0.5, 0.5]} position={[0, 1, 0]} />
+    <RigidBody
+      ref={body}
+      colliders={false}
+      enabledRotations={[false, false, false]}
+      position={[0, 5, 0]}
+      name="local-player"
+      friction={1.0}
+      linearDamping={0.5}
+      angularDamping={1.0}
+      gravityScale={1.2}
+    >
+      <CapsuleCollider args={[0.5, 0.5]} position={[0, 1, 0]} friction={0.8} restitution={0.0} />
       <group ref={visualGroup}>
           <group position={[0, 1.6, 0]}>
               <mesh castShadow>
