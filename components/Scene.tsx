@@ -1,5 +1,6 @@
+
 import React, { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, ThreeElements } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { Environment, Stars, Loader } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, SSAO } from '@react-three/postprocessing';
@@ -62,7 +63,7 @@ export const Scene: React.FC = () => {
             <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
             {/* Post Processing for Tech/Neon Glow and Enhanced Depth */}
-            <EffectComposer>
+            <EffectComposer enableNormalPass>
                 <SSAO 
                   samples={21}
                   radius={1.2}

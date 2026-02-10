@@ -1,17 +1,85 @@
 
-import React, { useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import React, { useRef, useMemo } from 'react';
+import { useFrame, extend, ThreeElement, ThreeElements } from '@react-three/fiber';
 import { RigidBody, RapierRigidBody, CapsuleCollider } from '@react-three/rapier';
-import { useKeyboardControls } from '@react-three/drei';
+import { useKeyboardControls, shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import { myPlayer } from 'playroomkit';
 import { useGameStore } from '../store';
+
+// --- Custom Tech Shader ---
+const TechShaderMaterial = shaderMaterial(
+  {
+    uTime: 0,
+    uColor: new THREE.Color('#00f0ff'),
+    uOpacity: 1.0,
+    uGlowIntensity: 1.5,
+  },
+  // Vertex Shader
+  `
+  varying vec2 vUv;
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+
+  void main() {
+    vUv = uv;
+    vNormal = normalize(normalMatrix * normal);
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    vViewPosition = -mvPosition.xyz;
+    gl_Position = projectionMatrix * mvPosition;
+  }
+  `,
+  // Fragment Shader
+  `
+  uniform float uTime;
+  uniform vec3 uColor;
+  uniform float uOpacity;
+  uniform float uGlowIntensity;
+  
+  varying vec2 vUv;
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+
+  void main() {
+    // 1. Fresnel (Edge Glow)
+    vec3 viewDir = normalize(vViewPosition);
+    float fresnel = pow(1.0 - dot(vNormal, viewDir), 2.5);
+    
+    // 2. Moving Scanlines
+    float scanline = sin(vUv.y * 120.0 - uTime * 8.0) * 0.15 + 0.85;
+    
+    // 3. Procedural Grid
+    float gridScale = 15.0;
+    vec2 gridUv = fract(vUv * gridScale + vec2(0.0, uTime * 0.1));
+    float grid = step(0.96, gridUv.x) + step(0.96, gridUv.y);
+    
+    // 4. Glitch Flickering
+    float flicker = step(0.98, sin(uTime * 20.0)) * 0.2;
+    
+    // Composite
+    vec3 color = uColor;
+    float alpha = uOpacity;
+    
+    // Base emissive + scanlines + grid + fresnel
+    vec3 finalColor = color * (scanline + grid * 0.4 + fresnel * 1.5 + flicker) * uGlowIntensity;
+    
+    // Add subtle brightness boost to the core
+    finalColor += color * (1.0 - length(vUv - 0.5) * 2.0) * 0.2;
+
+    gl_FragColor = vec4(finalColor, alpha);
+  }
+  `
+);
+
+extend({ TechShaderMaterial });
+
+// Define a constant for the custom shader material to avoid global JSX augmentation issues
+const TechShaderMaterialTag = 'techShaderMaterial' as any;
 
 const SPEED = 5;
 const RUN_MULTIPLIER = 1.8;
 const JUMP_FORCE = 5;
 
-// Tech Mage Base Colors
 const C_ARMOR = "#1e293b"; 
 const C_SKIN = "#d4aa7d"; 
 const C_CLOAK_OUT = "#0f172a"; 
@@ -23,10 +91,12 @@ export const Player: React.FC = () => {
   const capeRef = useRef<THREE.Group>(null);
   const accessoryRef = useRef<THREE.Group>(null);
   
+  const techMaterialRef = useRef<any>(null);
+  
   const [subscribeKeys, getKeys] = useKeyboardControls();
   const { energy, decreaseEnergy, regenerateEnergy, isMultiplayerReady, playerColor, playerAvatar } = useGameStore();
 
-  const C_ACCENT = playerColor;
+  const C_ACCENT = useMemo(() => new THREE.Color(playerColor), [playerColor]);
 
   useFrame((state, delta) => {
     if (!body.current) return;
@@ -66,9 +136,14 @@ export const Player: React.FC = () => {
        body.current.applyImpulse({ x: 0, y: JUMP_FORCE, z: 0 }, true);
     }
 
-    if (visualGroup.current && modelInternalGroup.current) {
-      const time = state.clock.getElapsedTime();
+    const time = state.clock.getElapsedTime();
 
+    // Update shader uniforms
+    if (techMaterialRef.current) {
+        techMaterialRef.current.uTime = time;
+    }
+
+    if (visualGroup.current && modelInternalGroup.current) {
       if (isMoving) {
         const targetRotation = Math.atan2(direction.x, direction.z);
         const currentRotation = visualGroup.current.rotation.y;
@@ -86,20 +161,16 @@ export const Player: React.FC = () => {
       const targetLeanForward = isMoving ? (isSprinting ? 0.25 : 0.12) : 0;
       modelInternalGroup.current.rotation.x = THREE.MathUtils.lerp(modelInternalGroup.current.rotation.x, targetLeanForward, 0.1);
       
-      // Accessory Animation (Unique per Avatar)
       if (accessoryRef.current) {
         if (playerAvatar === 'mage') {
-            // Staff sway
             const swayFreq = isSprinting ? 12 : 7;
             const swayAmp = isSprinting ? 0.15 : 0.05;
             accessoryRef.current.rotation.z = Math.sin(time * swayFreq) * swayAmp;
             accessoryRef.current.position.y = Math.cos(time * swayFreq * 0.5) * 0.02;
         } else if (playerAvatar === 'scout') {
-            // Drones orbiting
             accessoryRef.current.rotation.y = time * 2;
             accessoryRef.current.position.y = 0.5 + Math.sin(time * 3) * 0.1;
         } else if (playerAvatar === 'guardian') {
-            // Heavy thrusters pulse
             accessoryRef.current.scale.setScalar(1 + Math.sin(time * 10) * 0.02);
         }
       }
@@ -146,21 +217,22 @@ export const Player: React.FC = () => {
                     <sphereGeometry args={[0.19, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
                     <meshStandardMaterial color="#111" />
                 </mesh>
+                {/* Tech Visor with Shader */}
                 <mesh position={[0, 0.02, 0.14]}>
                     <boxGeometry args={[0.22, 0.06, 0.05]} />
-                    <meshStandardMaterial color={C_ACCENT} emissive={C_ACCENT} emissiveIntensity={4} />
+                    <TechShaderMaterialTag ref={techMaterialRef} uColor={C_ACCENT} transparent />
                 </mesh>
             </group>
 
             {/* Avatar Specific Visuals */}
             {playerAvatar === 'mage' && (
-                <MageVisuals color={C_ACCENT} accessoryRef={accessoryRef} capeRef={capeRef} />
+                <MageVisuals color={C_ACCENT} accessoryRef={accessoryRef} capeRef={capeRef} techMaterialRef={techMaterialRef} />
             )}
             {playerAvatar === 'scout' && (
-                <ScoutVisuals color={C_ACCENT} accessoryRef={accessoryRef} capeRef={capeRef} />
+                <ScoutVisuals color={C_ACCENT} accessoryRef={accessoryRef} capeRef={capeRef} techMaterialRef={techMaterialRef} />
             )}
             {playerAvatar === 'guardian' && (
-                <GuardianVisuals color={C_ACCENT} accessoryRef={accessoryRef} capeRef={capeRef} />
+                <GuardianVisuals color={C_ACCENT} accessoryRef={accessoryRef} capeRef={capeRef} techMaterialRef={techMaterialRef} />
             )}
         </group>
       </group>
@@ -168,7 +240,7 @@ export const Player: React.FC = () => {
   );
 };
 
-const MageVisuals = ({ color, accessoryRef, capeRef }: any) => (
+const MageVisuals = ({ color, accessoryRef, capeRef, techMaterialRef }: any) => (
   <>
     <mesh position={[0, 1, 0]} castShadow>
         <capsuleGeometry args={[0.25, 0.7, 12, 12]} />
@@ -176,13 +248,20 @@ const MageVisuals = ({ color, accessoryRef, capeRef }: any) => (
     </mesh>
     <mesh position={[0, 1.2, 0.22]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.08, 0.08, 0.05, 16]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} />
+        <TechShaderMaterialTag uColor={color} transparent uGlowIntensity={3.0} />
     </mesh>
     <group ref={capeRef} position={[0, 1.4, -0.2]}>
         <mesh position={[0, -0.7, 0]} castShadow>
             <boxGeometry args={[0.8, 1.4, 0.02]} />
             <meshStandardMaterial color={C_CLOAK_OUT} transparent opacity={0.9} />
         </mesh>
+        {/* Cloak data strips with shader */}
+        {[ -0.3, 0.3 ].map((x, i) => (
+            <mesh key={i} position={[x, -0.7, 0.02]}>
+                <planeGeometry args={[0.1, 1.3]} />
+                <TechShaderMaterialTag uColor={color} transparent uGlowIntensity={1.0} />
+            </mesh>
+        ))}
     </group>
     <group ref={accessoryRef} position={[0.5, 0.8, 0.3]}>
         <mesh castShadow position={[0, 0.5, 0]}>
@@ -191,8 +270,8 @@ const MageVisuals = ({ color, accessoryRef, capeRef }: any) => (
         </mesh>
         <group position={[0, 1.6, 0]}>
             <mesh position={[0, 0, 0.04]}>
-                <planeGeometry args={[0.08, 0.3]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={10} />
+                <planeGeometry args={[0.12, 0.35]} />
+                <TechShaderMaterialTag uColor={color} transparent uGlowIntensity={5.0} />
             </mesh>
             <pointLight intensity={2} color={color} distance={4} />
         </group>
@@ -200,36 +279,34 @@ const MageVisuals = ({ color, accessoryRef, capeRef }: any) => (
   </>
 );
 
-const ScoutVisuals = ({ color, accessoryRef, capeRef }: any) => (
+const ScoutVisuals = ({ color, accessoryRef, capeRef, techMaterialRef }: any) => (
   <>
     <mesh position={[0, 1, 0]} castShadow>
         <capsuleGeometry args={[0.2, 0.8, 12, 12]} />
         <meshStandardMaterial color="#0f172a" />
     </mesh>
-    {/* Split Wings */}
     <group ref={capeRef} position={[0, 1.4, -0.15]}>
         <mesh position={[-0.25, -0.6, 0]} rotation={[0, -0.2, 0]} castShadow>
             <boxGeometry args={[0.3, 1.2, 0.02]} />
-            <meshStandardMaterial color={color} transparent opacity={0.6} />
+            <TechShaderMaterialTag uColor={color} transparent uOpacity={0.6} />
         </mesh>
         <mesh position={[0.25, -0.6, 0]} rotation={[0, 0.2, 0]} castShadow>
             <boxGeometry args={[0.3, 1.2, 0.02]} />
-            <meshStandardMaterial color={color} transparent opacity={0.6} />
+            <TechShaderMaterialTag uColor={color} transparent uOpacity={0.6} />
         </mesh>
     </group>
-    {/* Orbiting Drones */}
     <group ref={accessoryRef}>
         {[0, Math.PI * 0.66, Math.PI * 1.33].map((angle, i) => (
             <mesh key={i} position={[Math.cos(angle) * 0.6, 1.2, Math.sin(angle) * 0.6]}>
                 <boxGeometry args={[0.1, 0.1, 0.1]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} />
+                <TechShaderMaterialTag uColor={color} transparent uGlowIntensity={4.0} />
             </mesh>
         ))}
     </group>
   </>
 );
 
-const GuardianVisuals = ({ color, accessoryRef, capeRef }: any) => (
+const GuardianVisuals = ({ color, accessoryRef, capeRef, techMaterialRef }: any) => (
   <>
     <mesh position={[0, 1, 0]} castShadow>
         <boxGeometry args={[0.6, 0.9, 0.5]} />
@@ -243,15 +320,15 @@ const GuardianVisuals = ({ color, accessoryRef, capeRef }: any) => (
         <boxGeometry args={[0.3, 0.2, 0.3]} />
         <meshStandardMaterial color={C_ARMOR} />
     </mesh>
-    {/* Heavy Thruster Pack */}
     <group ref={accessoryRef} position={[0, 1.1, -0.3]}>
         <mesh castShadow>
             <boxGeometry args={[0.4, 0.6, 0.2]} />
             <meshStandardMaterial color="#111" />
         </mesh>
+        {/* Exhaust ports with shader */}
         <mesh position={[0, -0.3, 0]}>
-            <sphereGeometry args={[0.1, 8, 8]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} />
+            <sphereGeometry args={[0.12, 12, 12]} />
+            <TechShaderMaterialTag uColor={color} transparent uGlowIntensity={6.0} />
         </mesh>
         <pointLight intensity={2} color={color} distance={3} />
     </group>
@@ -261,7 +338,6 @@ const GuardianVisuals = ({ color, accessoryRef, capeRef }: any) => (
 export const GhostPlayer: React.FC<{ player: any }> = ({ player }) => {
   const meshRef = useRef<THREE.Group>(null);
   const color = player.getState('color') || player.getProfile()?.color?.hex || '#ffffff';
-  const avatar = player.getState('avatar') || 'mage';
 
   useFrame(() => {
     if (!meshRef.current) return;
@@ -275,9 +351,8 @@ export const GhostPlayer: React.FC<{ player: any }> = ({ player }) => {
     <group ref={meshRef}>
       <mesh position={[0, 1, 0]}>
         <capsuleGeometry args={[0.3, 1, 8, 8]} />
-        <meshStandardMaterial color={color} transparent opacity={0.2} wireframe />
+        <meshStandardMaterial color={color} transparent opacity={0.15} wireframe />
       </mesh>
-      {/* Small class indicator */}
       <mesh position={[0, 1.8, 0]}>
           <boxGeometry args={[0.05, 0.05, 0.05]} />
           <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />

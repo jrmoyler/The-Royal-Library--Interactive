@@ -16,8 +16,11 @@ const keyboardMap = [
   { name: 'run', keys: ['Shift'] },
 ];
 
+const START_SCREEN_IMG = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=2000'; // Placeholder for Image 3
+
 const App: React.FC = () => {
   const [mounted, setMounted] = useState(false);
+  const [showSync, setShowSync] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const { setMultiplayerReady, playerColor, playerAvatar } = useGameStore();
 
@@ -28,7 +31,6 @@ const App: React.FC = () => {
   const handleStart = async () => {
     try {
       await insertCoin({ skipLobby: true }); 
-      // Sync the selected color and avatar to Playroom profile
       const player = myPlayer();
       if (player) {
         player.setState('color', playerColor, true);
@@ -38,8 +40,6 @@ const App: React.FC = () => {
       setMultiplayerReady(true);
       setGameStarted(true);
     } catch (error) {
-      console.error("Failed to initialize Playroom:", error);
-      // Fallback for local development
       setGameStarted(true);
     }
   };
@@ -47,9 +47,40 @@ const App: React.FC = () => {
   if (!mounted) return null;
 
   return (
-    <div className="relative w-full h-full bg-tech-slate overflow-hidden">
+    <div className="relative w-full h-full bg-black overflow-hidden">
       {!gameStarted ? (
-        <CharacterSelection onStart={handleStart} />
+        <>
+          {!showSync ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center font-mono">
+              <div 
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${START_SCREEN_IMG})` }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+              
+              <div className="relative z-10 text-center px-4">
+                <h1 className="text-white text-6xl md:text-8xl font-bold tracking-[0.4em] mb-4 uppercase drop-shadow-[0_0_20px_rgba(0,240,255,0.6)]">
+                  AETHERIA
+                </h1>
+                <p className="text-tech-cyan text-sm tracking-[0.8em] mb-24 opacity-80">ARCHIVAL_PROTOCOL_V.4.2</p>
+                
+                <button 
+                  onClick={() => setShowSync(true)}
+                  className="group relative px-12 py-4 border border-tech-cyan/40 hover:border-tech-cyan transition-all"
+                >
+                  <span className="text-tech-cyan text-xl tracking-[0.4em] group-hover:text-white transition-colors">PRESS START</span>
+                  <div className="absolute inset-0 bg-tech-cyan/5 group-hover:bg-tech-cyan/20 animate-pulse" />
+                </button>
+              </div>
+              
+              <div className="absolute bottom-8 text-[10px] text-gray-500 tracking-widest uppercase opacity-40">
+                P2P_ENCRYPTED_SESSION // MULTIPLAYER_READY
+              </div>
+            </div>
+          ) : (
+            <CharacterSelection onStart={handleStart} />
+          )}
+        </>
       ) : (
         <KeyboardControls map={keyboardMap}>
           <Scene />

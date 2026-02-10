@@ -1,10 +1,14 @@
+
 import React, { useRef, useState, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text, Float } from '@react-three/drei';
+import { Text, Float, useTexture } from '@react-three/drei';
 import { CuboidCollider, RigidBody, RapierRigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { BookData } from '../types';
 import { useGameStore } from '../store';
+
+// Asset: Detailed Book Texture
+const BOOK_TEXTURE_URL = 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800'; // Placeholder for Image 4/8
 
 interface BookArtifactProps {
   data: BookData;
@@ -19,49 +23,48 @@ export const BookArtifact: React.FC<BookArtifactProps> = ({ data }) => {
   const { discoverBook, setActiveBook, activeBookId } = useGameStore();
   const isActive = activeBookId === data.id;
 
-  // Persistent material
-  const material = useMemo(() => new THREE.MeshStandardMaterial({
-    color: data.color,
-    emissive: data.color,
-    emissiveIntensity: 0.5,
-    roughness: 0.2,
-    metalness: 0.8,
-  }), [data.color]);
+  // Load texture
+  const texture = useTexture(BOOK_TEXTURE_URL);
+
+  const materials = useMemo(() => {
+    const emissiveColor = new THREE.Color(data.color);
+    return {
+      cover: new THREE.MeshStandardMaterial({
+        map: texture,
+        color: data.color,
+        emissive: emissiveColor,
+        emissiveIntensity: 0.5,
+        roughness: 0.3,
+        metalness: 0.7,
+      }),
+      pages: new THREE.MeshStandardMaterial({
+        color: "#fff",
+        emissive: "#fff",
+        emissiveIntensity: 0.1,
+      })
+    };
+  }, [data.color, texture]);
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
-
-    // 1. Pulsing Emissive Glow Animation
-    // Base pulse
     let targetIntensity = 0.5 + Math.sin(time * 2) * 0.2; 
     
-    // Intensity boost on hover or active
     if (hovered || isActive) {
-      targetIntensity = 2.0 + Math.sin(time * 10) * 0.5; // Faster, brighter pulse
+      targetIntensity = 2.5 + Math.sin(time * 12) * 0.8;
     }
+    materials.cover.emissiveIntensity = THREE.MathUtils.lerp(materials.cover.emissiveIntensity, targetIntensity, 0.1);
 
-    // Smoothly interpolate current intensity to target
-    material.emissiveIntensity = THREE.MathUtils.lerp(material.emissiveIntensity, targetIntensity, 0.1);
-
-    // 2. Rotation on Hover
     if (visualGroupRef.current) {
         if (hovered || isActive) {
-            // Spin and tilt when hovered/active
-            visualGroupRef.current.rotation.y += 0.05;
-            visualGroupRef.current.rotation.x = Math.sin(time * 3) * 0.2;
+            visualGroupRef.current.rotation.y += 0.04;
+            visualGroupRef.current.position.y = Math.sin(time * 4) * 0.1;
         } else {
-            // Return to neutral rotation
-            visualGroupRef.current.rotation.y = THREE.MathUtils.lerp(visualGroupRef.current.rotation.y, 0, 0.1);
-            visualGroupRef.current.rotation.x = THREE.MathUtils.lerp(visualGroupRef.current.rotation.x, 0, 0.1);
+            visualGroupRef.current.rotation.y = THREE.MathUtils.lerp(visualGroupRef.current.rotation.y, 0, 0.05);
+            visualGroupRef.current.position.y = THREE.MathUtils.lerp(visualGroupRef.current.position.y, 0, 0.05);
         }
-    }
-
-    if (inRange) {
-       // Interaction listener logic kept minimal here
     }
   });
 
-  // Handle interaction
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (inRange && e.code === 'KeyE') {
@@ -69,49 +72,32 @@ export const BookArtifact: React.FC<BookArtifactProps> = ({ data }) => {
         setActiveBook(isActive ? null : data.id);
       }
     };
-
-    if (inRange) {
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    if (inRange) window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [inRange, isActive, data.id, discoverBook, setActiveBook]);
 
   return (
     <group position={data.position}>
-      <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-        <RigidBody 
-          ref={rigidBodyRef} 
-          type="fixed" 
-          colliders={false}
-        >
-           {/* Visual Group for Independent Rotation */}
+      <Float speed={2} rotationIntensity={0.2} floatIntensity={0.4}>
+        <RigidBody ref={rigidBodyRef} type="fixed" colliders={false}>
            <group ref={visualGroupRef}>
-              {/* Cover */}
-              <mesh
-                castShadow
-                receiveShadow
-                onPointerOver={() => setHovered(true)}
-                onPointerOut={() => setHovered(false)}
-                material={material}
-              >
-                <boxGeometry args={[0.6, 0.8, 0.15]} />
+              {/* Textured Book Cover */}
+              <mesh castShadow receiveShadow onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)} material={materials.cover}>
+                <boxGeometry args={[0.7, 1.0, 0.2]} />
               </mesh>
               
-              {/* Pages Mesh (aesthetic) */}
+              {/* Glowing Pages Core */}
               <mesh position={[0.02, 0, 0]}>
-                 <boxGeometry args={[0.55, 0.76, 0.16]} />
-                 <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.1} />
+                 <boxGeometry args={[0.65, 0.96, 0.22]} />
+                 <meshStandardMaterial color={data.color} emissive={data.color} emissiveIntensity={2} transparent opacity={0.3} />
               </mesh>
            </group>
 
-          {/* Sensor for proximity */}
           <CuboidCollider 
             args={[1.5, 1.5, 1.5]} 
             sensor 
             onIntersectionEnter={(payload) => {
-              if (payload.other.rigidBodyObject?.name === 'local-player') {
-                setInRange(true);
-              }
+              if (payload.other.rigidBodyObject?.name === 'local-player') setInRange(true);
             }}
             onIntersectionExit={(payload) => {
               if (payload.other.rigidBodyObject?.name === 'local-player') {
@@ -123,17 +109,8 @@ export const BookArtifact: React.FC<BookArtifactProps> = ({ data }) => {
         </RigidBody>
       </Float>
 
-      {/* Floating Label */}
-      <Text
-        position={[0, 1.2, 0]}
-        fontSize={0.2}
-        color={inRange ? "white" : "gray"}
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.01}
-        outlineColor="#000000"
-      >
-        {inRange ? "PRESS [E]" : ""}
+      <Text position={[0, 1.5, 0]} fontSize={0.15} color={inRange ? "white" : "gray"} anchorX="center" outlineWidth={0.01} outlineColor="#000">
+        {inRange ? `SYNK: ${data.title}\n[E] TO INTERFACE` : ""}
       </Text>
     </group>
   );

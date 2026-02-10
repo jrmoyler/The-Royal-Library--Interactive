@@ -1,58 +1,66 @@
+
 import React from 'react';
 import { RigidBody } from '@react-three/rapier';
-import { Box } from '@react-three/drei';
+import { Box, useTexture } from '@react-three/drei';
+import * as THREE from 'three';
+
+const INTERIOR_URL = 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=2000'; // Placeholder for Image 11
 
 export const Level: React.FC = () => {
-  // NOTE: If you have the 'library.glb' file, uncomment the following lines and remove the procedural code below.
-  // const { scene } = useGLTF('/models/library.glb');
+  const texture = useTexture(INTERIOR_URL);
   
   return (
     <group dispose={null}>
-      {/* 
-        Procedural "Greybox" Level 
-        Used as a fallback since the GLB asset was not found.
-      */}
-      
       {/* Floor */}
       <RigidBody type="fixed" friction={1}>
-        <Box args={[50, 1, 50]} position={[0, -0.5, 0]} receiveShadow>
-          <meshStandardMaterial color="#1e293b" />
+        <Box args={[60, 1, 60]} position={[0, -0.5, 0]} receiveShadow>
+          <meshStandardMaterial color="#080c14" roughness={0.1} metalness={0.8} />
         </Box>
       </RigidBody>
 
-      {/* Pillars / Walls */}
+      {/* Atmospheric Interior Backdrops */}
+      <group position={[0, 10, -20]}>
+         <mesh>
+            <planeGeometry args={[60, 30]} />
+            <meshBasicMaterial map={texture} transparent opacity={0.3} side={THREE.DoubleSide} />
+         </mesh>
+      </group>
+
+      {/* Central Portal / Data Core Beam */}
+      <group position={[0, 0, 0]}>
+         <mesh position={[0, 10, 0]}>
+            <cylinderGeometry args={[2, 2, 20, 32, 1, true]} />
+            <meshStandardMaterial 
+              color="#00f0ff" 
+              emissive="#00f0ff" 
+              emissiveIntensity={10} 
+              transparent 
+              opacity={0.1}
+              side={THREE.DoubleSide}
+            />
+         </mesh>
+         <mesh position={[0, 10, 0]}>
+            <cylinderGeometry args={[0.5, 0.5, 20, 16]} />
+            <meshStandardMaterial color="#fff" emissive="#00f0ff" emissiveIntensity={20} transparent opacity={0.4} />
+         </mesh>
+         <pointLight position={[0, 5, 0]} intensity={5} color="#00f0ff" distance={20} />
+      </group>
+
+      {/* Structured Archways */}
       <RigidBody type="fixed">
         <group>
-            {/* North Wall */}
-            <Box args={[50, 10, 2]} position={[0, 5, -24]} receiveShadow castShadow>
-                <meshStandardMaterial color="#334155" />
-            </Box>
-            {/* South Wall */}
-            <Box args={[50, 10, 2]} position={[0, 5, 24]} receiveShadow castShadow>
-                <meshStandardMaterial color="#334155" />
-            </Box>
-            {/* East Wall */}
-            <Box args={[2, 10, 50]} position={[24, 5, 0]} receiveShadow castShadow>
-                <meshStandardMaterial color="#334155" />
-            </Box>
-            {/* West Wall */}
-            <Box args={[2, 10, 50]} position={[-24, 5, 0]} receiveShadow castShadow>
-                <meshStandardMaterial color="#334155" />
-            </Box>
-
-            {/* Central Pillars */}
-            <Box args={[2, 8, 2]} position={[-10, 4, -10]} castShadow receiveShadow>
-                <meshStandardMaterial color="#475569" />
-            </Box>
-            <Box args={[2, 8, 2]} position={[10, 4, -10]} castShadow receiveShadow>
-                <meshStandardMaterial color="#475569" />
-            </Box>
-            <Box args={[2, 8, 2]} position={[-10, 4, 10]} castShadow receiveShadow>
-                <meshStandardMaterial color="#475569" />
-            </Box>
-            <Box args={[2, 8, 2]} position={[10, 4, 10]} castShadow receiveShadow>
-                <meshStandardMaterial color="#475569" />
-            </Box>
+            {/* Arch Pillars */}
+            {[ -12, 12 ].map((x) => (
+                <group key={x} position={[x, 5, -15]}>
+                    <Box args={[2, 10, 2]} castShadow receiveShadow>
+                        <meshStandardMaterial color="#1e293b" />
+                    </Box>
+                    <mesh position={[0, 0, 1.1]}>
+                        <planeGeometry args={[1.5, 9]} />
+                        <meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={2} />
+                    </mesh>
+                </group>
+            ))}
         </group>
       </RigidBody>
     </group>
