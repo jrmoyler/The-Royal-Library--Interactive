@@ -16,7 +16,8 @@ const keyboardMap = [
   { name: 'run', keys: ['Shift'] },
 ];
 
-const START_SCREEN_IMG = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=2000'; // Placeholder for Image 3
+// Hotlinked asset for the Castle Start screen
+const START_SCREEN_IMG = 'https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?auto=format&fit=crop&q=80&w=2000'; // Placeholder for Image 3
 
 const App: React.FC = () => {
   const [mounted, setMounted] = useState(false);
@@ -47,34 +48,35 @@ const App: React.FC = () => {
   if (!mounted) return null;
 
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden">
+    <div className="relative w-full h-full bg-black overflow-hidden select-none">
       {!gameStarted ? (
         <>
           {!showSync ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center font-mono">
+            <div className="absolute inset-0 flex flex-col items-center justify-center font-mono cursor-pointer" onClick={() => setShowSync(true)}>
               <div 
-                className="absolute inset-0 bg-cover bg-center"
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-[20s] scale-110 hover:scale-100"
                 style={{ backgroundImage: `url(${START_SCREEN_IMG})` }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-80" />
+              <div className="absolute inset-0 bg-blue-900/10 mix-blend-overlay" />
               
               <div className="relative z-10 text-center px-4">
-                <h1 className="text-white text-6xl md:text-8xl font-bold tracking-[0.4em] mb-4 uppercase drop-shadow-[0_0_20px_rgba(0,240,255,0.6)]">
+                <h1 className="text-white text-7xl md:text-9xl font-bold tracking-[0.5em] mb-4 uppercase drop-shadow-[0_0_30px_rgba(0,240,255,0.8)] italic">
                   AETHERIA
                 </h1>
-                <p className="text-tech-cyan text-sm tracking-[0.8em] mb-24 opacity-80">ARCHIVAL_PROTOCOL_V.4.2</p>
+                <p className="text-tech-cyan text-sm tracking-[1em] mb-32 opacity-80 ml-[1em]">ARCHIVAL_PROTOCOL_0.9.1</p>
                 
-                <button 
-                  onClick={() => setShowSync(true)}
-                  className="group relative px-12 py-4 border border-tech-cyan/40 hover:border-tech-cyan transition-all"
-                >
-                  <span className="text-tech-cyan text-xl tracking-[0.4em] group-hover:text-white transition-colors">PRESS START</span>
-                  <div className="absolute inset-0 bg-tech-cyan/5 group-hover:bg-tech-cyan/20 animate-pulse" />
-                </button>
+                <div className="animate-pulse">
+                  <span className="text-tech-cyan text-2xl tracking-[0.6em] font-bold drop-shadow-[0_0_10px_#00f0ff] uppercase">
+                    PRESS START TO INITIALIZE
+                  </span>
+                </div>
               </div>
               
-              <div className="absolute bottom-8 text-[10px] text-gray-500 tracking-widest uppercase opacity-40">
-                P2P_ENCRYPTED_SESSION // MULTIPLAYER_READY
+              <div className="absolute bottom-12 flex gap-12 text-[9px] text-gray-500 tracking-[0.3em] uppercase opacity-60">
+                <span>SECURE_LINK: STABLE</span>
+                <span>MULTIPLAYER: ENABLED</span>
+                <span>VERSION: ALPHA_BUILD</span>
               </div>
             </div>
           ) : (
