@@ -1,0 +1,5 @@
+{
+  "name": "Aetheria Library",
+  "description": "A 3D gamified portfolio exploration using React Three Fiber, Rapier Physics, and Multiplayer interactions.",
+  "requestFramePermissions": []
+}
