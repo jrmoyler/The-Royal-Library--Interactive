@@ -73,19 +73,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     const levelUp = newLevel > state.level;
 
     let achievementNotification = null;
-
-    // Progressive achievement system
     if (newSet.size === 3) {
-       achievementNotification = { title: "ACHIEVEMENT: NOVICE ARCHIVIST", type: 'achievement' as const };
-    } else if (newSet.size === 6) {
-       achievementNotification = { title: "ACHIEVEMENT: DATA COLLECTOR", type: 'achievement' as const };
-    } else if (newSet.size === 9) {
-       achievementNotification = { title: "ACHIEVEMENT: MASTER ARCHIVIST", type: 'achievement' as const };
-    } else if (newSet.size === 12) {
-       achievementNotification = { title: "ACHIEVEMENT: AETHERIA LEGEND", type: 'achievement' as const };
+       achievementNotification = { title: "ACHIEVEMENT: ARCHIVIST", type: 'achievement' as const };
     }
 
-    return {
+    return { 
       discoveredBooks: newSet,
       xp: newXp,
       level: newLevel,

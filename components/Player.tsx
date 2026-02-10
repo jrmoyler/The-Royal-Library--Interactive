@@ -209,144 +209,47 @@ export const GhostPlayer: React.FC<{ player: any }> = ({ player }) => {
 
 const MageModel = ({ color, weaponRef, capeRef }: any) => (
   <>
-    {/* Enhanced Body with Armor Plates */}
     <mesh position={[0, 0.8, 0]} castShadow>
         <capsuleGeometry args={[0.28, 0.8, 12, 12]} />
-        <meshStandardMaterial color={C_ARMOR} metalness={0.8} roughness={0.3} />
+        <meshStandardMaterial color={C_ARMOR} />
     </mesh>
-    {/* Chest Plate with Glow */}
-    <mesh position={[0, 0.9, 0.3]}>
-        <boxGeometry args={[0.5, 0.4, 0.1]} />
-        <meshStandardMaterial color="#1a2130" metalness={1} roughness={0.1} />
-    </mesh>
-    <mesh position={[0, 0.9, 0.36]}>
-        <circleGeometry args={[0.1, 16]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} />
-    </mesh>
-    {/* Shoulder Guards */}
-    {[-0.4, 0.4].map((x, i) => (
-      <mesh key={i} position={[x, 1.3, 0]} castShadow>
-        <sphereGeometry args={[0.15, 8, 8]} />
-        <meshStandardMaterial color="#1a2130" metalness={0.9} roughness={0.2} />
-      </mesh>
-    ))}
-    {/* Enhanced Cape with Glowing Edges */}
     <group ref={capeRef} position={[0, 1.4, -0.25]}>
         <mesh position={[0, -0.85, 0]} castShadow>
             <boxGeometry args={[0.9, 1.7, 0.01]} />
             <TechShaderMaterialTag uColor={color} transparent uOpacity={0.3} uGlowIntensity={1.5} />
         </mesh>
-        {/* Cape Edge Glow */}
-        {[[-0.45, -0.85], [0.45, -0.85]].map(([x, y], i) => (
-          <mesh key={i} position={[x, y, 0.01]}>
-            <boxGeometry args={[0.02, 1.7, 0.02]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={8} />
-          </mesh>
-        ))}
     </group>
-    {/* Enhanced Staff with Energy Crystals */}
     <group ref={weaponRef} position={[0.7, 1.1, 0.4]}>
         <mesh castShadow>
             <cylinderGeometry args={[0.025, 0.025, 2.8]} />
-            <meshStandardMaterial color="#111" metalness={1} roughness={0.1} />
+            <meshStandardMaterial color="#111" metalness={1} />
         </mesh>
-        {/* Main Crystal */}
         <mesh position={[0, 1.5, 0]}>
             <octahedronGeometry args={[0.15]} />
             <TechShaderMaterialTag uColor={color} transparent uGlowIntensity={10} />
         </mesh>
-        {/* Orbiting Small Crystals */}
-        {[0, 1, 2].map((i) => {
-          const angle = (i / 3) * Math.PI * 2;
-          return (
-            <mesh
-              key={i}
-              position={[
-                Math.cos(angle) * 0.25,
-                1.5 + Math.sin(angle) * 0.1,
-                Math.sin(angle) * 0.25
-              ]}
-            >
-              <octahedronGeometry args={[0.05]} />
-              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={15} />
-            </mesh>
-          );
-        })}
-        {/* Staff Bands */}
-        {[0.3, 0.6, 0.9].map((y, i) => (
-          <mesh key={i} position={[0, y, 0]}>
-            <cylinderGeometry args={[0.04, 0.04, 0.08]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} metalness={1} />
-          </mesh>
-        ))}
     </group>
   </>
 );
 
 const ScoutModel = ({ color, weaponRef, capeRef }: any) => (
   <>
-    {/* Enhanced Scout Body */}
     <mesh position={[0, 0.85, 0]} castShadow>
         <capsuleGeometry args={[0.22, 0.9, 12, 12]} />
-        <meshStandardMaterial color="#050a14" metalness={0.9} roughness={0.2} />
+        <meshStandardMaterial color="#050a14" metalness={0.8} />
     </mesh>
-    {/* Tech Vest with Circuit Lines */}
-    <mesh position={[0, 0.9, 0.23]}>
-        <boxGeometry args={[0.4, 0.6, 0.05]} />
-        <meshStandardMaterial color="#0a0e17" metalness={0.8} />
-    </mesh>
-    {/* Glowing Circuit Strips */}
-    {[-0.15, 0, 0.15].map((x, i) => (
-      <mesh key={i} position={[x, 0.9, 0.26]}>
-        <boxGeometry args={[0.02, 0.5, 0.01]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={6} />
-      </mesh>
-    ))}
-    {/* Utility Belt */}
-    <mesh position={[0, 0.5, 0]}>
-        <cylinderGeometry args={[0.25, 0.25, 0.08, 16]} />
-        <meshStandardMaterial color="#1a2130" metalness={1} roughness={0.1} />
-    </mesh>
-    {/* Belt Pouches */}
-    {[-0.2, 0.2].map((x, i) => (
-      <mesh key={i} position={[x, 0.5, 0.2]}>
-        <boxGeometry args={[0.08, 0.12, 0.08]} />
-        <meshStandardMaterial color="#050a14" metalness={0.7} />
-      </mesh>
-    ))}
-    {/* Enhanced Cape */}
     <group ref={capeRef} position={[0, 1.4, -0.15]}>
         <mesh position={[0, -0.7, 0]} castShadow>
             <boxGeometry args={[0.6, 1.3, 0.01]} />
             <TechShaderMaterialTag uColor={color} transparent uOpacity={0.7} />
         </mesh>
     </group>
-    {/* Enhanced Dual Daggers */}
     <group ref={weaponRef}>
         {[ -0.5, 0.5 ].map((x, i) => (
-          <group key={i} position={[x, 0.9, 0.35]}>
-            {/* Blade */}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <mesh key={i} position={[x, 0.9, 0.35]} rotation={[Math.PI / 2, 0, 0]}>
                 <boxGeometry args={[0.04, 0.5, 0.02]} />
                 <TechShaderMaterialTag uColor={color} transparent uGlowIntensity={8} />
             </mesh>
-            {/* Handle */}
-            <mesh position={[0, -0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.02, 0.02, 0.2]} />
-                <meshStandardMaterial color="#111" metalness={1} />
-            </mesh>
-            {/* Energy Trail */}
-            <mesh position={[0, 0.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <boxGeometry args={[0.06, 0.3, 0.01]} />
-                <meshStandardMaterial
-                  color={color}
-                  emissive={color}
-                  emissiveIntensity={3}
-                  transparent
-                  opacity={0.5}
-                />
-            </mesh>
-          </group>
         ))}
     </group>
   </>
@@ -354,112 +257,24 @@ const ScoutModel = ({ color, weaponRef, capeRef }: any) => (
 
 const GuardianModel = ({ color, weaponRef, capeRef }: any) => (
   <>
-    {/* Enhanced Heavy Armor Body */}
     <mesh position={[0, 0.9, 0]} castShadow>
         <boxGeometry args={[0.65, 1.2, 0.55]} />
         <meshStandardMaterial color="#1a2130" metalness={1} roughness={0.05} />
     </mesh>
-    {/* Chest Core Reactor */}
-    <mesh position={[0, 1.0, 0.28]}>
-        <boxGeometry args={[0.25, 0.35, 0.08]} />
-        <meshStandardMaterial color="#0a0e17" metalness={0.9} />
-    </mesh>
-    <mesh position={[0, 1.0, 0.33]}>
-        <circleGeometry args={[0.12, 6]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={8} />
-    </mesh>
-    {/* Shoulder Armor Plates */}
-    {[-0.45, 0.45].map((x, i) => (
-      <group key={i} position={[x, 1.4, 0]}>
-        <mesh castShadow>
-          <boxGeometry args={[0.25, 0.3, 0.25]} />
-          <meshStandardMaterial color="#1a2130" metalness={1} roughness={0.1} />
-        </mesh>
-        {/* Shoulder Spikes */}
-        <mesh position={[x * 0.3, 0.2, 0]}>
-          <coneGeometry args={[0.08, 0.2, 4]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} />
-        </mesh>
-      </group>
-    ))}
-    {/* Armor Plating Details */}
-    {[0.6, 0.8, 1.0, 1.2].map((y, i) => (
-      <group key={i}>
-        <mesh position={[-0.33, y, 0]}>
-          <boxGeometry args={[0.05, 0.15, 0.5]} />
-          <meshStandardMaterial color="#080c14" metalness={0.9} />
-        </mesh>
-        <mesh position={[0.33, y, 0]}>
-          <boxGeometry args={[0.05, 0.15, 0.5]} />
-          <meshStandardMaterial color="#080c14" metalness={0.9} />
-        </mesh>
-      </group>
-    ))}
-    {/* Energy Lines */}
-    {[-0.25, 0.25].map((x, i) => (
-      <mesh key={i} position={[x, 0.9, 0.28]}>
-        <boxGeometry args={[0.02, 0.8, 0.01]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={6} />
-      </mesh>
-    ))}
-    {/* Enhanced Heavy Cape */}
     <group ref={capeRef} position={[0, 1.4, -0.32]}>
         <mesh position={[0, -0.9, 0]} castShadow>
             <boxGeometry args={[1.1, 1.8, 0.05]} />
-            <meshStandardMaterial color="#080808" metalness={0.3} />
+            <meshStandardMaterial color="#080808" />
         </mesh>
-        {/* Cape Metal Trim */}
-        {[[-0.55, -0.9], [0.55, -0.9]].map(([x, y], i) => (
-          <mesh key={i} position={[x, y, 0.03]}>
-            <boxGeometry args={[0.03, 1.8, 0.01]} />
-            <meshStandardMaterial color="#444" metalness={1} />
-          </mesh>
-        ))}
     </group>
-    {/* Enhanced Greatsword */}
     <group ref={weaponRef} position={[0.7, 1.0, 0.4]}>
-        {/* Blade with Fuller */}
         <mesh castShadow rotation={[0, 0, 0.05]}>
             <boxGeometry args={[0.18, 2.0, 0.06]} />
             <TechShaderMaterialTag uColor={color} transparent uGlowIntensity={4} />
         </mesh>
-        {/* Fuller Groove */}
-        <mesh position={[0, 0, 0.03]} rotation={[0, 0, 0.05]}>
-            <boxGeometry args={[0.06, 1.8, 0.02]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={10} />
-        </mesh>
-        {/* Crossguard */}
-        <mesh position={[0, -1.05, 0]}>
-            <boxGeometry args={[0.6, 0.08, 0.12]} />
-            <meshStandardMaterial color="#1a2130" metalness={1} />
-        </mesh>
-        {/* Crossguard Gems */}
-        {[-0.25, 0.25].map((x, i) => (
-          <mesh key={i} position={[x, -1.05, 0]}>
-            <octahedronGeometry args={[0.05]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={12} />
-          </mesh>
-        ))}
-        {/* Handle */}
         <mesh position={[0, -1.1, 0]}>
             <cylinderGeometry args={[0.05, 0.05, 0.7]} />
-            <meshStandardMaterial color="#111" metalness={0.8} />
-        </mesh>
-        {/* Handle Wrapping */}
-        {[0, 1, 2].map((i) => (
-          <mesh key={i} position={[0, -1.45 + i * 0.15, 0]}>
-            <cylinderGeometry args={[0.055, 0.055, 0.03]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} />
-          </mesh>
-        ))}
-        {/* Pommel */}
-        <mesh position={[0, -1.8, 0]}>
-            <sphereGeometry args={[0.08, 8, 8]} />
-            <meshStandardMaterial color="#1a2130" metalness={1} />
-        </mesh>
-        <mesh position={[0, -1.8, 0]}>
-            <octahedronGeometry args={[0.04]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={15} />
+            <meshStandardMaterial color="#444" />
         </mesh>
     </group>
   </>
