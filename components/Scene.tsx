@@ -1,6 +1,6 @@
 
 import React, { Suspense } from 'react';
-import { Canvas, ThreeElements } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { Environment, Stars, Loader } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, SSAO } from '@react-three/postprocessing';
@@ -20,128 +20,53 @@ const BOOKS: BookData[] = [
 
 export const Scene: React.FC = () => {
   const players = usePlayersList(true);
-  const { isMultiplayerReady, xp, level, energy, playerAvatar, playerColor } = useGameStore();
+  const { isMultiplayerReady } = useGameStore();
 
   return (
     <>
       <Canvas 
         shadows 
-        gl={{ antialias: true, shadowMapType: THREE.PCFSoftShadowMap }}
+        gl={{ antialias: true, shadowMapType: THREE.PCFSoftShadowMap, alpha: false }}
         camera={{ position: [0, 5, 12], fov: 45 }}
       >
         <Suspense fallback={null}>
-            <color attach="background" args={['#020408']} />
-            <fog attach="fog" args={['#020408', 10, 50]} />
-            
+            <color attach="background" args={['#010204']} />
+            <fog attach="fog" args={['#010204', 15, 45]} />
             <Environment preset="night" background={false} />
-            <ambientLight intensity={0.1} />
-            <pointLight position={[10, 10, 10]} intensity={3} color="#00f0ff" castShadow />
-
-            <Physics gravity={[0, -9.81, 0]}>
+            <ambientLight intensity={0.2} />
+            
+            <Physics gravity={[0, -12, 0]}>
                 <Level />
                 <Player />
-                {isMultiplayerReady && players.map((player) => (
-                   <GhostPlayer key={player.id} player={player} />
+                {isMultiplayerReady && players.map((p) => (
+                   <GhostPlayer key={p.id} player={p} />
                 ))}
                 {BOOKS.map((book) => (
                     <BookArtifact key={book.id} data={book} />
                 ))}
             </Physics>
 
-            <Stars radius={100} depth={50} count={3000} factor={4} saturation={0.5} fade speed={0.5} />
+            <Stars radius={100} depth={50} count={3000} factor={4} speed={0.5} />
 
-            <EffectComposer enableNormalPass multisampling={4}>
-                <SSAO samples={16} radius={2} intensity={15} luminanceInfluence={0.6} color={new THREE.Color("#000000")} />
-                <Bloom luminanceThreshold={0.9} mipmapBlur intensity={1.5} radius={0.4} />
+            <EffectComposer multisampling={4} enableNormalPass>
+                <SSAO 
+                  samples={16} 
+                  radius={0.4} 
+                  intensity={15} 
+                  luminanceInfluence={0.5} 
+                  color={new THREE.Color("#000000")} 
+                />
+                <Bloom luminanceThreshold={1.0} mipmapBlur intensity={1.2} radius={0.4} />
                 <Vignette darkness={1.1} offset={0.3} />
             </EffectComposer>
         </Suspense>
       </Canvas>
-      <Loader />
-
-      {/* --- PLAYER STATISTICS OVERLAY --- */}
-      <div className="fixed bottom-12 left-12 pointer-events-none select-none z-50 flex flex-col gap-6 font-mono w-80">
-        
-        {/* Profile Card Style (Matching character frame style) */}
-        <div className="flex items-start gap-4">
-          <div className="relative">
-            {/* Class Icon with Player Color Accent */}
-            <div 
-              className="w-16 h-16 bg-tech-slate/80 border-2 backdrop-blur-xl flex items-center justify-center relative overflow-hidden transition-colors duration-500"
-              style={{ borderColor: `${playerColor}66` }}
-            >
-               <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: `${playerColor}0D` }} />
-               <div className="w-10 h-10 border rotate-45" style={{ borderColor: `${playerColor}33` }} />
-               <span className="absolute text-[8px] top-1 left-1" style={{ color: `${playerColor}99` }}>NODE_ID</span>
-            </div>
-            {/* Level Badge */}
-            <div 
-              className="absolute -bottom-2 -right-2 text-black px-2 py-0.5 text-[10px] font-black italic shadow-lg transition-colors duration-500"
-              style={{ backgroundColor: playerColor }}
-            >
-              LVL_{level}
-            </div>
-          </div>
-
-          <div className="flex-1 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-white text-lg font-black tracking-widest italic">{playerAvatar.toUpperCase()}</span>
-              <span className="text-[9px] tracking-[0.2em]" style={{ color: `${playerColor}99` }}>CONNECTED</span>
-            </div>
-            <div className="h-0.5 w-full bg-tech-cyan/20 relative">
-               <div className="absolute inset-0 transition-all duration-500" style={{ width: '100%', backgroundColor: playerColor, boxShadow: `0 0 10px ${playerColor}` }} />
-            </div>
-            <div className="flex justify-between text-[9px] text-gray-500 uppercase tracking-tighter">
-              <span>Sync_Stability</span>
-              <span>98.4%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Vital Stats Group */}
-        <div className="space-y-4 bg-black/40 p-4 border border-white/5 backdrop-blur-md">
-           {/* Energy / Suit Integrity */}
-           <div className="space-y-1">
-              <div className="flex justify-between items-center text-[10px] tracking-[0.2em] font-bold">
-                 <span className="text-gray-400">NEURAL_SYNC</span>
-                 <span className={energy < 25 ? 'text-red-500 animate-pulse' : ''} style={{ color: energy < 25 ? undefined : playerColor }}>
-                    {Math.round(energy)}%
-                 </span>
-              </div>
-              <div className="h-1.5 w-full bg-white/5 relative overflow-hidden">
-                 <div 
-                   className={`h-full transition-all duration-300`}
-                   style={{ 
-                     width: `${energy}%`, 
-                     backgroundColor: energy < 25 ? '#ef4444' : playerColor,
-                     boxShadow: energy < 25 ? '0 0 10px #ef4444' : `0 0 10px ${playerColor}`
-                   }}
-                 />
-              </div>
-           </div>
-
-           {/* XP Progress */}
-           <div className="space-y-1">
-              <div className="flex justify-between items-center text-[10px] tracking-[0.2em] font-bold">
-                 <span className="text-gray-400">ARCHIVAL_XP</span>
-                 <span className="text-white">{xp % 500} / 500</span>
-              </div>
-              <div className="h-1 w-full bg-white/5 relative">
-                 <div 
-                   className="h-full bg-white/60 transition-all duration-1000"
-                   style={{ width: `${(xp % 500) / 5}%` }}
-                 />
-              </div>
-           </div>
-        </div>
-
-        {/* Decorative System Log */}
-        <div className="text-[8px] uppercase tracking-[0.4em] leading-relaxed" style={{ color: `${playerColor}4D` }}>
-           SCANNING_CELL_X_42...<br/>
-           FRAGMENT_SYNC_STABLE<br/>
-           AETHERIA_LINK_0.9.1
-        </div>
-      </div>
+      <Loader 
+        containerStyles={{ background: '#050505' }}
+        innerStyles={{ background: '#111' }}
+        barStyles={{ background: '#00f0ff' }}
+        dataStyles={{ color: '#00f0ff', fontFamily: 'monospace' }}
+      />
     </>
   );
 };

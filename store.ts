@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import { GoogleGenAI } from "@google/genai";
 
 interface GameState {
   energy: number;
@@ -13,6 +14,8 @@ interface GameState {
   notification: { title: string; type: 'info' | 'achievement' } | null;
   playerColor: string;
   playerAvatar: string;
+  loreText: string | null;
+  isLoreLoading: boolean;
   
   // Actions
   setMultiplayerReady: (ready: boolean) => void;
@@ -23,6 +26,7 @@ interface GameState {
   discoverBook: (bookId: string) => void;
   setActiveBook: (bookId: string | null) => void;
   clearNotification: () => void;
+  generateLore: (title: string) => Promise<void>;
 }
 
 const SAVED_COLOR = typeof window !== 'undefined' ? localStorage.getItem('aetheria-player-color') : null;
@@ -40,6 +44,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   notification: null,
   playerColor: SAVED_COLOR || '#00f0ff',
   playerAvatar: SAVED_AVATAR || 'mage',
+  loreText: null,
+  isLoreLoading: false,
 
   setMultiplayerReady: (ready) => set({ isMultiplayerReady: ready }),
   
@@ -85,7 +91,23 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
   }),
 
-  setActiveBook: (bookId) => set({ activeBookId: bookId }),
+  setActiveBook: (bookId) => set({ activeBookId: bookId, loreText: null }),
   
   clearNotification: () => set({ notification: null }),
+
+  generateLore: async (title: string) => {
+    set({ isLoreLoading: true, loreText: null });
+    try {
+      // Corrected: Initializing with a single object containing the apiKey
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `You are the Aetheria Archival AI. Provide a 2-sentence cryptic, technical lore entry about a project named "${title}". Use terms like 'neural sync', 'data fragment', 'void sector', 'protocol'. Return as plain text.`,
+      });
+      set({ loreText: response.text, isLoreLoading: false });
+    } catch (error) {
+      console.error("AI Error:", error);
+      set({ loreText: "Error accessing neural uplink. Archive corrupted.", isLoreLoading: false });
+    }
+  }
 }));

@@ -1,169 +1,89 @@
+
 import React from 'react';
 import { RigidBody } from '@react-three/rapier';
-import { Box } from '@react-three/drei';
+import { Box, useTexture, MeshDistortMaterial } from '@react-three/drei';
 import * as THREE from 'three';
-import { Bookshelf } from './Bookshelf';
-import { Pillar } from './Pillar';
-import { DataCore } from './DataCore';
+
+const INTERIOR_URL = 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=2000';
 
 export const Level: React.FC = () => {
+  const texture = useTexture(INTERIOR_URL);
+  
   return (
     <group dispose={null}>
-      {/* ── FLOOR ── */}
-      {/* Main solid floor with physics - thick slab to prevent fall-through */}
-      <RigidBody type="fixed" friction={1.2} restitution={0.1}>
-        <Box args={[80, 2, 80]} position={[0, -1, 0]} receiveShadow>
-          <meshStandardMaterial color="#0a0e17" roughness={0.2} metalness={0.9} />
+      {/* Robust Industrial Floor - Increased thickness to prevent glitch-through */}
+      <RigidBody type="fixed" friction={1} name="floor">
+        <Box args={[120, 5, 120]} position={[0, -2.5, 0]} receiveShadow>
+          <meshStandardMaterial color="#05070a" roughness={0.4} metalness={0.6} />
         </Box>
+        {/* Floor Circuit Grid */}
+        {[ -40, -20, 0, 20, 40 ].map(z => (
+          <mesh key={'z'+z} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, z]}>
+            <planeGeometry args={[120, 0.05]} />
+            <meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={8} transparent opacity={0.3} />
+          </mesh>
+        ))}
+        {[ -40, -20, 0, 20, 40 ].map(x => (
+          <mesh key={'x'+x} rotation={[-Math.PI / 2, 0, Math.PI / 2]} position={[x, 0.02, 0]}>
+            <planeGeometry args={[120, 0.05]} />
+            <meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={8} transparent opacity={0.3} />
+          </mesh>
+        ))}
       </RigidBody>
 
-      {/* Floor circuit pattern lines */}
-      {[-20, -10, 0, 10, 20].map((z) => (
-        <mesh key={`line-z-${z}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, z]}>
-          <planeGeometry args={[80, 0.08]} />
-          <meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={5} transparent opacity={0.2} />
-        </mesh>
-      ))}
-      {[-20, -10, 0, 10, 20].map((x) => (
-        <mesh key={`line-x-${x}`} rotation={[-Math.PI / 2, 0, Math.PI / 2]} position={[x, 0.01, 0]}>
-          <planeGeometry args={[80, 0.08]} />
-          <meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={5} transparent opacity={0.15} />
-        </mesh>
-      ))}
+      {/* Atmospheric World Planes */}
+      {[0, 1, 2, 3].map((i) => {
+        const angle = (i * Math.PI) / 2;
+        return (
+          <mesh key={i} position={[Math.sin(angle) * 55, 15, Math.cos(angle) * 55]} rotation={[0, angle + Math.PI, 0]}>
+            <planeGeometry args={[120, 60]} />
+            <meshBasicMaterial map={texture} transparent opacity={0.1} color="#001a33" />
+          </mesh>
+        );
+      })}
 
-      {/* ── BOUNDARY WALLS (invisible physics) ── */}
-      <RigidBody type="fixed">
-        {/* North wall */}
-        <Box args={[80, 10, 1]} position={[0, 5, -40]}>
-          <meshStandardMaterial transparent opacity={0} />
-        </Box>
-        {/* South wall */}
-        <Box args={[80, 10, 1]} position={[0, 5, 40]}>
-          <meshStandardMaterial transparent opacity={0} />
-        </Box>
-        {/* East wall */}
-        <Box args={[1, 10, 80]} position={[40, 5, 0]}>
-          <meshStandardMaterial transparent opacity={0} />
-        </Box>
-        {/* West wall */}
-        <Box args={[1, 10, 80]} position={[-40, 5, 0]}>
-          <meshStandardMaterial transparent opacity={0} />
-        </Box>
-      </RigidBody>
+      {/* CENTRAL ARCHIVAL CORE */}
+      <group position={[0, 0, 0]}>
+         <mesh position={[0, 20, 0]}>
+            <cylinderGeometry args={[2.5, 2.5, 40, 32, 1, true]} />
+            <meshStandardMaterial 
+              color="#00f0ff" 
+              emissive="#00f0ff" 
+              emissiveIntensity={20} 
+              transparent 
+              opacity={0.05}
+              side={THREE.DoubleSide}
+            />
+         </mesh>
+         <mesh position={[0, 20, 0]}>
+            <cylinderGeometry args={[0.2, 0.2, 40, 8]} />
+            <meshStandardMaterial color="#fff" emissive="#00f0ff" emissiveIntensity={30} />
+         </mesh>
+         <mesh position={[0, 1.5, 0]}>
+            <sphereGeometry args={[2.5, 32, 32]} />
+            <MeshDistortMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={12} speed={3} distort={0.5} />
+         </mesh>
+         <pointLight position={[0, 15, 0]} intensity={15} color="#00f0ff" distance={50} decay={2} />
+      </group>
 
-      {/* ── CENTRAL DATA CORE (replaces old energy fountain) ── */}
-      <DataCore position={[0, 0, 0]} accentColor="#00f0ff" />
-
-      {/* ── MODULAR PILLARS (replace old box pillars) ── */}
+      {/* Structural Pillars */}
       <RigidBody type="fixed">
         <group>
-          <Pillar position={[-15, 0, -15]} height={10} accentColor="#00f0ff" />
-          <Pillar position={[15, 0, -15]} height={10} accentColor="#ff0055" />
-          <Pillar position={[-15, 0, 15]} height={10} accentColor="#764abc" />
-          <Pillar position={[15, 0, 15]} height={10} accentColor="#ffaa00" />
+            {[ -25, 25 ].map((x) => (
+                [ -25, 25 ].map((z) => (
+                    <group key={`${x}-${z}`} position={[x, 8, z]}>
+                        <Box args={[4, 16, 4]} castShadow receiveShadow>
+                            <meshStandardMaterial color="#0f141f" metalness={0.9} />
+                        </Box>
+                        <mesh position={[0, 0, 2.05]}>
+                            <planeGeometry args={[0.5, 14]} />
+                            <meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={15} />
+                        </mesh>
+                    </group>
+                ))
+            ))}
         </group>
       </RigidBody>
-
-      {/* ── MODULAR BOOKSHELVES (replace PNG backdrops) ── */}
-      {/* North wing */}
-      {[-12, -8, -4, 4, 8, 12].map((x, i) => (
-        <Bookshelf
-          key={`shelf-n-${i}`}
-          position={[x, 2, -18]}
-          rotation={[0, 0, 0]}
-          accentColor={i % 2 === 0 ? '#00f0ff' : '#764abc'}
-        />
-      ))}
-
-      {/* East wing */}
-      {[-12, -6, 0, 6, 12].map((z, i) => (
-        <Bookshelf
-          key={`shelf-e-${i}`}
-          position={[20, 2, z]}
-          rotation={[0, -Math.PI / 2, 0]}
-          accentColor={i % 2 === 0 ? '#ff0055' : '#ffaa00'}
-        />
-      ))}
-
-      {/* West wing */}
-      {[-12, -6, 0, 6, 12].map((z, i) => (
-        <Bookshelf
-          key={`shelf-w-${i}`}
-          position={[-20, 2, z]}
-          rotation={[0, Math.PI / 2, 0]}
-          accentColor={i % 2 === 0 ? '#00f0ff' : '#ccff00'}
-        />
-      ))}
-
-      {/* South alcove shelves */}
-      {[-8, -4, 4, 8].map((x, i) => (
-        <Bookshelf
-          key={`shelf-s-${i}`}
-          position={[x, 2, 18]}
-          rotation={[0, Math.PI, 0]}
-          accentColor="#ffaa00"
-        />
-      ))}
-
-      {/* ── READING ALCOVES (low-poly lecterns near book positions) ── */}
-      {[
-        [-8, 0, -8],
-        [8, 0, -8],
-        [0, 0, 8],
-      ].map(([x, y, z], i) => (
-        <RigidBody key={`lectern-${i}`} type="fixed" position={[x, y, z]}>
-          <group>
-            {/* Pedestal */}
-            <mesh position={[0, 0.5, 0]} castShadow>
-              <cylinderGeometry args={[0.15, 0.3, 1.0, 6]} />
-              <meshStandardMaterial color="#3a2515" roughness={0.8} />
-            </mesh>
-            {/* Top surface */}
-            <mesh position={[0, 1.05, 0]} rotation={[-0.3, 0, 0]} castShadow>
-              <boxGeometry args={[0.8, 0.06, 0.6]} />
-              <meshStandardMaterial color="#5a4030" roughness={0.7} />
-            </mesh>
-            {/* Base */}
-            <mesh position={[0, 0.05, 0]}>
-              <cylinderGeometry args={[0.4, 0.4, 0.1, 6]} />
-              <meshStandardMaterial color="#3a2515" roughness={0.8} />
-            </mesh>
-          </group>
-        </RigidBody>
-      ))}
-
-      {/* ── AMBIENT FLOOR LIGHTS ── */}
-      {[
-        [-10, 0.1, -10],
-        [10, 0.1, -10],
-        [-10, 0.1, 10],
-        [10, 0.1, 10],
-        [0, 0.1, -15],
-        [0, 0.1, 15],
-        [-15, 0.1, 0],
-        [15, 0.1, 0],
-      ].map(([x, y, z], i) => (
-        <pointLight
-          key={`floor-light-${i}`}
-          position={[x, y + 0.5, z]}
-          intensity={1}
-          color="#00f0ff"
-          distance={8}
-          decay={2}
-        />
-      ))}
-
-      {/* ── ATMOSPHERIC ELEMENTS ── */}
-      {/* Ceiling plane (high up, subtle) */}
-      <mesh position={[0, 20, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#050810" side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* Ambient lighting */}
-      <ambientLight intensity={0.05} />
-      <pointLight position={[10, 15, 10]} intensity={3} color="#00f0ff" castShadow />
-      <pointLight position={[-10, 15, -10]} intensity={2} color="#764abc" />
     </group>
   );
 };
